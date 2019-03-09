@@ -1,0 +1,14 @@
+.*/
+.classpath
+.project
+.settings
+.vagrant/
+bin/
+target/
+idea/
+*.iml
+*.pyc
+.tox/
+*.egg-info
+.cache-main
+node_modules/
