@@ -10,7 +10,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.Objects;
-public class Event {
+public class Event implements Comparable<Event>{
 
   private  String customer;
   private  int id;
@@ -154,5 +154,13 @@ public class Event {
       ", dateTime=" + dateTime +
       ", date=" + date +
       '}';
+  }
+
+  @Override
+  public int compareTo(Event o) {
+//    if(this.id > o.id) return 1;
+//    if(this.id < o.id) return -1;
+//    else                   return 0;
+    return Integer.compare(this.id, o.id);
   }
 }

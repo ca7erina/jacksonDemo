@@ -1,30 +1,33 @@
-
-import static com.xiaoxue.domain.Constants.DATE_FORMAT;
+import static com.xiaoxue.service.DateService.getEventDate;
+import static com.xiaoxue.service.DateService.toLocatDateTime;
+import static com.xiaoxue.service.JsonService.MAPPER;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Charsets;
-import com.google.common.io.CharStreams;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.xiaoxue.domain.Constants;
 import com.xiaoxue.domain.Event;
+import com.xiaoxue.service.FileService;
 import com.xiaoxue.service.JsonService;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Period;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.Date;
-import java.util.TimeZone;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 
 import org.junit.FixMethodOrder;
@@ -63,7 +66,7 @@ public class EntryTest {
 
   @Test
   public void testJsonToEvent1() throws IOException {
-    JsonNode json = getJson("event1.json");
+    JsonNode json = new FileService().getJson("event1.json");
     Event event = JsonService.toEvent(json);
 
     System.out.println(event);
@@ -71,23 +74,39 @@ public class EntryTest {
 
   @Test
   public void testJsonToEvent2() throws IOException {
-    JsonNode json = getJson("event2.json");
+    JsonNode json = new FileService().getJson("event2.json");
     Event event = JsonService.toEvent(json);
     System.out.println(event);
   }
 
   @Test
   public void testStringToEvent1() throws IOException {
-    String str = getJsonString("event1.json");
+    String str = new FileService().getJsonString("event1.json");
     Event event = JsonService.toEvent(str);
     System.out.println(event);
   }
 
   @Test
   public void testStringToEvent2() throws IOException {
-    String str = getJsonString("event2.json");
+    String str = new FileService().getJsonString("event2.json");
     Event event = JsonService.toEvent(str);
     System.out.println(event);
+  }
+
+  @Test
+  public void testEvents() throws IOException {
+    String str = new FileService().getJsonString("events.json");
+    final ArrayNode data = (ArrayNode) MAPPER.readTree(str).get(Constants.EVENTS_KEY);
+    final List<Event> events = new ArrayList<>(data.size());
+
+    for (JsonNode json : data) {
+      events.add(JsonService.toEvent(json));
+    }
+
+//    events.forEach(event->System.out.println(event));
+    events.forEach(System.out::println);
+
+
   }
 
   @Test
@@ -102,51 +121,45 @@ public class EntryTest {
     LocalDateTime ldt4 = toLocatDateTime(date4);
 
 
-    Period period = Period.between(ldt3.toLocalDate(),ldt4.toLocalDate());
+    Period period = Period.between(ldt3.toLocalDate(), ldt4.toLocalDate());
     Duration duration = Duration.between(ldt3, ldt4);
     long diff = Math.abs(duration.toMinutes());
     assertTrue(date4.after(date3));
-    assertEquals(2,period.getDays());
-    assertEquals(2,duration.toDays());
+    assertEquals(2, period.getDays());
+    assertEquals(2, duration.toDays());
+  }
+
+  @Test
+  public void testIteration() throws ParseException {
+    Set<Event> set = new TreeSet<>();
+    set.add(getEvent(4));
+    set.add(getEvent(2));
+    set.add(getEvent(9));
+
+    for (Event e : set) {
+      System.out.println(e);
+    }
+
+    Map<String, Integer> map = new LinkedHashMap<>();
+    map.put("a", 3);
+    map.put("b", 2);
+    map.put("c", 1);
+    for (Map.Entry<String, Integer> pair : map.entrySet()) {
+      System.out.println(pair.getKey() + ":" + pair.getValue());
+    }
+
+    set.stream().peek(e -> e.setCode("test")).peek(System.out::println).collect(Collectors.toList());
   }
 
 
-  private String getJsonString(String path) throws IOException {
-    InputStream stream = getClass().getClassLoader().getResourceAsStream(path);
-
-    return CharStreams.toString(new InputStreamReader(stream, Charsets.UTF_8));
-  }
-
-  private JsonNode getJson(String path) throws IOException {
-    InputStream stream = getClass().getClassLoader().getResourceAsStream(path);
-
-    return new ObjectMapper().readTree(stream);
-
-  }
-
-  private Date getEventDate() throws ParseException {
-    SimpleDateFormat df = new SimpleDateFormat(DATE_FORMAT);
-    df.setTimeZone(TimeZone.getTimeZone("UTC"));
-
-    String toParse = "01-01-2019 02:30";
-    return df.parse(toParse);
-  }
-
-  private Date getEventDate(String dateTime) throws ParseException {
-    SimpleDateFormat df = new SimpleDateFormat(DATE_FORMAT);
-    df.setTimeZone(TimeZone.getTimeZone("UTC"));
-    return df.parse(dateTime);
-  }
-
-  private LocalDateTime toLocatDateTime(Date date) {
-//    LocalDateTime ldt = LocalDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault());
-    Instant instant = Instant.ofEpochMilli(date.getTime());
-    return LocalDateTime.ofInstant(instant, ZoneOffset.UTC);
-  }
-
-  private Date toDate(LocalDateTime localDateTime) {
-    Instant instant = localDateTime.toInstant(ZoneOffset.UTC);
-    return Date.from(instant);
+  private Event getEvent(int id) throws ParseException {
+    Event event = new Event(id);
+    event.setCategory("A");
+    event.setCode("C");
+    event.setTimestamp(Instant.now());
+    event.setDateTime(LocalDateTime.now());
+    event.setDate(getEventDate());
+    return event;
   }
 
 }

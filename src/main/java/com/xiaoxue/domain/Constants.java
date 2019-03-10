@@ -4,7 +4,7 @@ public class Constants {
 
   private Constants(){}
 
-  public static final String CUSTOMER_KEY = "custormer";
+  public static final String EVENTS_KEY = "events";
   public static final String CODE_KEY = "code";
   public static final String DESCRIPTION_KEY = "description";
   public static final String PRIORITY_NAME_KEY = "priority";
